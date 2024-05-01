@@ -113,6 +113,10 @@
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        document.querySelector(".loading").style.display = "block";
+        document.getElementById("submit_button").style.display = "none";
+
         const formData = new FormData(form);
 
         if (formData.get("files").size === 0) {
@@ -121,6 +125,8 @@
             title: "Oops...",
             text: "Please select an image!",
           });
+          document.querySelector(".loading").style.display = "none";
+          document.getElementById("submit_button").style.display = "block";
           return;
         }
 
@@ -130,6 +136,8 @@
             title: "Oops...",
             text: "Please enter the image type!",
           });
+          document.querySelector(".loading").style.display = "none";
+          document.getElementById("submit_button").style.display = "block";
           return;
         }
 
@@ -162,12 +170,6 @@
         document.querySelector(".loading").style.display = "none";
         document.getElementById("submit_button").style.display = "block";
         form.reset();
-      });
-
-      // show loading indicator
-      form.addEventListener("submit", () => {
-        document.querySelector(".loading").style.display = "block";
-        document.getElementById("submit_button").style.display = "none";
       });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
