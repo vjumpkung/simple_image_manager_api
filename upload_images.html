@@ -3,29 +3,92 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+    <meta name="robots" content="noindex" />
     <title>Upload Images</title>
   </head>
   <body>
-    <form id="upload_images">
-      <input name="files" type="file" accept="image/*" required multiple />
-      <input id="image_type" name="category" type="text" />
-      <input type="submit" />
-    </form>
-    <code id="upload_result"> </code>
+    <main class="container">
+      <h1 style="text-align: center">By Me Image Uploader</h1>
+      <form id="upload_images">
+        <h3>Image :</h3>
+        <input name="files" type="file" accept="image/*" required multiple />
+        <h3>Type :</h3>
+        <select name="select" aria-label="Select" id="image_type">
+          <option selected disabled value="">select</option>
+          <option value="t_shirt">เสื้อยืด</option>
+          <option value="polo">เสื้อโปโล</option>
+          <option value="fabric_bag">กระเป๋าผ้า</option>
+          <option value="water_cylinder">กระบอกน้ำ</option>
+          <option value="umbrella">ร่ม</option>
+          <option value="hat">หมวก</option>
+          <option value="other">อื่นๆ</option>
+        </select>
+
+        <input type="submit" />
+      </form>
+    </main>
     <script>
       const form = document.getElementById("upload_images");
       const imageType = document.getElementById("image_type");
+
+      // get query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const accesstoken = urlParams.get("accesstoken");
+
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const formData = new FormData(form);
-        const response = await fetch(`/upload_images/${imageType.value}/`, {
-          method: "POST",
-          body: formData,
-        });
-        const result = await response.json();
-        document.getElementById("upload_result").innerText =
-          JSON.stringify(result);
+
+        if (formData.get("files").size === 0) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Please select an image!",
+          });
+          return;
+        }
+
+        if (!imageType.value) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Please enter the image type!",
+          });
+          return;
+        }
+
+        const response = await fetch(
+          `${window.location.protocol}//${window.location.hostname}${
+            window.location.port !== "" ? ":" + window.location.port : ""
+          }/upload_images/${imageType.value}/`,
+          {
+            method: "POST",
+            body: formData,
+            headers: {
+              accesstoken: accesstoken,
+            },
+          }
+        );
+
+        if (response.status === 201) {
+          Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "Image uploaded successfully!",
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Something went wrong!",
+          });
+        }
       });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </body>
 </html>
