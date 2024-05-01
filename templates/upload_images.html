@@ -67,7 +67,7 @@
   </head>
   <body>
     <main class="container">
-      <h1 style="text-align: center">By Me Image Uploader</h1>
+      <h1 style="text-align: center">Simple Image Uploader</h1>
       <form id="upload_images">
         <h3>Image :</h3>
         <input name="files" type="file" accept="image/*" required multiple />
@@ -103,6 +103,11 @@
           </div>
         </div>
       </form>
+      <p style="text-align: center">
+        <a href="/manage_images/?accesstoken={{accesstoken}}"
+          >จัดการรูปภาพทั้งหมด</a
+        >
+      </p>
     </main>
     <script>
       const form = document.getElementById("upload_images");
