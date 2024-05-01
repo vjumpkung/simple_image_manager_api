@@ -9,6 +9,7 @@ import re
 from fastapi import FastAPI, File, UploadFile, Request, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from typing import List
 
 from database.connection import sqliteConnection, cursor
@@ -19,6 +20,8 @@ import config.load_config as CONFIG
 
 app = FastAPI(title=CONFIG.API_NAME, summary=CONFIG.API_DESCRIPTION)
 
+
+templates = Jinja2Templates(directory="templates")
 
 origins = [
     "*",
@@ -101,22 +104,22 @@ def upload_images(
 
 
 @app.get("/")
-def main(accesstoken: str = None):
+def main(request: Request, accesstoken: str = None):
 
     if accesstoken == CONFIG.SECRET:
-        with open("upload_images.html", "r", encoding="utf8") as f:
-            content = f.read()
-        return HTMLResponse(content=content)
+        return templates.TemplateResponse(
+            "upload_images.html", {"accesstoken": CONFIG.SECRET, "request": request}
+        )
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
 
 
 @app.get("/manage_images/")
-def manageImages(accesstoken: str = None):
+def manageImages(request: Request, accesstoken: str = None):
     if accesstoken == CONFIG.SECRET:
-        with open("manage_images.html", "r", encoding="utf8") as f:
-            content = f.read()
-        return HTMLResponse(content=content)
+        return templates.TemplateResponse(
+            "manage_images.html", {"accesstoken": CONFIG.SECRET, "request": request}
+        )
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
 
