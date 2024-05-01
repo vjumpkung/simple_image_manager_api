@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Images</title>
+  </head>
+  <body>
+    <form id="upload_images">
+      <input name="files" type="file" accept="image/*" required multiple />
+      <input id="image_type" name="category" type="text" />
+      <input type="submit" />
+    </form>
+    <code id="upload_result"> </code>
+    <script>
+      const form = document.getElementById("upload_images");
+      const imageType = document.getElementById("image_type");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const response = await fetch(`/upload_images/${imageType.value}/`, {
+          method: "POST",
+          body: formData,
+        });
+        const result = await response.json();
+        document.getElementById("upload_result").innerText =
+          JSON.stringify(result);
+      });
+    </script>
+  </body>
+</html>
