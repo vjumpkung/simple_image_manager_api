@@ -106,6 +106,7 @@ def main(accesstoken: str = None):
     if accesstoken == CONFIG.SECRET:
         with open("upload_images.html", "r", encoding="utf8") as f:
             content = f.read()
+            content = re.sub(r"\s+", " ", content)
         return HTMLResponse(content=content)
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
@@ -116,6 +117,7 @@ def manageImages(accesstoken: str = None):
     if accesstoken == CONFIG.SECRET:
         with open("manage_images.html", "r", encoding="utf8") as f:
             content = f.read()
+            content = re.sub(r"\s+", " ", content)
         return HTMLResponse(content=content)
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
