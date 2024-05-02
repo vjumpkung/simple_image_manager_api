@@ -108,13 +108,13 @@ venv.bak/
 .idea/*
 
 # image
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-*.ico
-*.webp
+/public/*.png
+/public/*.jpg
+/public/*.jpeg
+/public/*.gif
+/public/*.svg
+/public/*.ico
+/public/*.webp
 
 database.db
 
