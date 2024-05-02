@@ -12,6 +12,8 @@ Support multiple images and can select type for find by type later (for grouping
 
 For manage images (delete only)
 
+see more features by going swagger docs (/docs)
+
 ## Setup
 
 1. clone repository
@@ -38,3 +40,4 @@ For manage images (delete only)
 ```
 
 6. run `python main.py`
+7. access website with `http://localhost:PORT/?accesstoken=SECRET` (require SECRET for simple securing :P)
