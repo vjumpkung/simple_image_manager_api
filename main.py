@@ -2,7 +2,7 @@ import os
 import random
 import re
 import uuid
-import asyncio
+import json
 from typing import List
 
 import uvicorn
@@ -43,10 +43,9 @@ class ImagesResponseDto(BaseModel):
 
 @app.get("/")
 def main(request: Request, accesstoken: str = None):
-
     if accesstoken == CONFIG.SECRET:
         return templates.TemplateResponse(
-            "upload_images.html", {"accesstoken": CONFIG.SECRET, "request": request}
+            "upload_images.html", {"accesstoken": CONFIG.SECRET, "request": request, "image_types": CONFIG.CHOICES}
         )
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
@@ -54,9 +53,27 @@ def main(request: Request, accesstoken: str = None):
 
 @app.get("/manage_images/")
 def manageImages(request: Request, accesstoken: str = None):
+    
+    cursor.execute("SELECT * FROM images;")
+
+    images = cursor.fetchall()
+
+    db.commit()
+
+    images_res = []
+
+    for image in images:
+        images_res.append(
+            {
+                "image_id": image[0],
+                "img_url": "/public/" + image[2],
+                "type": image[1],
+            }
+        )
+    
     if accesstoken == CONFIG.SECRET:
         return templates.TemplateResponse(
-            "manage_images.html", {"accesstoken": CONFIG.SECRET, "request": request}
+            "manage_images.html", {"accesstoken": CONFIG.SECRET, "request": request, "images": images_res}
         )
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
@@ -196,4 +213,3 @@ if __name__ == "__main__":
         reload=CONFIG.RELOAD,
         host=CONFIG.HOST,
     )
-    # stop the database connection after the server is stopped

@@ -89,13 +89,11 @@
         <h3>Type :</h3>
         <select name="select" aria-label="Select" id="image_type">
           <option selected disabled value="">select</option>
-          <option value="t_shirt">เสื้อยืด</option>
-          <option value="polo">เสื้อโปโล</option>
-          <option value="fabric_bag">กระเป๋าผ้า</option>
-          <option value="water_cylinder">กระบอกน้ำ</option>
-          <option value="umbrella">ร่ม</option>
-          <option value="hat">หมวก</option>
-          <option value="other">อื่นๆ</option>
+          {% for image_type in image_types %}
+          <option value="{{ image_type['value'] }}">
+            {{ image_type['choice'] }}
+          </option>
+          {% endfor %}
         </select>
 
         <input

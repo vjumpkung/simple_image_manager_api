@@ -1,0 +1,14 @@
+[
+  {
+    "choice": "Choice A",
+    "value": "Value_A"
+  },
+  {
+    "choice": "Choice B",
+    "value": "Value_B"
+  },
+  {
+    "choice": "Choice C",
+    "value": "Value_C"
+  }
+]

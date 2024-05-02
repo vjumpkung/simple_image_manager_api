@@ -73,37 +73,27 @@
       <p style="text-align: center">
         <a href="/?accesstoken={{accesstoken}}">Upload Images</a>
       </p>
-      <div id="image_list" class="flexbox"></div>
+      <div id="image_list" class="flexbox">
+        {% for image in images %}
+        <div class="item" id="{{ image.image_id }}">
+          <div class="content">
+            <p>Type : {{ image.type }}</p>
+            <div class="img_container">
+              <img src="{{ image.img_url }}" alt="{{ image.type }}" />
+            </div>
+            <div>
+              <button onclick="confirmDelete('{{ image.image_id }}')">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
     </main>
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       const accesstoken = urlParams.get("accesstoken");
-
-      async function getImages() {
-        const response = await fetch(`/get_all_images/`);
-        const data = await response.json();
-        return data;
-      }
-      getImages().then((images) => {
-        const img_list = document.getElementById("image_list");
-        images.forEach((image) => {
-          const div = document.createElement("div");
-          div.className = "item";
-          div.id = image.image_id;
-          div.innerHTML = `
-            <div class="content">           
-              <p>Type : ${image.type}</p>
-              <div class="img_container">
-                <img src="${image.img_url}" alt="${image.type}"/>
-              </div>
-              <div>
-                <button onclick="confirmDelete('${image.image_id}')">Delete</button>
-              </div>
-            </div>
-          `;
-          img_list.appendChild(div);
-        });
-      });
       async function confirmDelete(image_id) {
         const result = await Swal.fire({
           title: "Are you sure?",
@@ -116,10 +106,9 @@
           cancelButtonText: "cancel",
         });
         if (result.isConfirmed) {
-          deleteImage(image_id);
+          await deleteImage(image_id);
         }
       }
-
       async function deleteImage(image_id) {
         const response = await fetch(`/delete_image/${image_id}/`, {
           method: "DELETE",
