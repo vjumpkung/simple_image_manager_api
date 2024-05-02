@@ -14,7 +14,6 @@
     <title>Upload Images</title>
     <style>
       .lds-dual-ring {
-        /* change color here */
         color: #ffffff;
       }
       .lds-dual-ring,
@@ -65,6 +64,14 @@
         text-align: center;
         box-sizing: border-box;
       }
+
+      footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: 2.5rem; /* Footer height */
+        margin-bottom: 0.25em;
+      }
     </style>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.10.8/sweetalert2.all.min.js"
@@ -112,11 +119,18 @@
         </div>
       </form>
       <p style="text-align: center">
-        <a href="/manage_images/?accesstoken={{accesstoken}}"
-          >จัดการรูปภาพทั้งหมด</a
-        >
+        <a href="/manage_images/?accesstoken={{accesstoken}}">Manage Images</a>
       </p>
     </main>
+    <footer style="text-align: center">
+      created by
+      <a
+        href="https://github.com/vjumpkung"
+        target="_blank"
+        rel="noopener noreferrer"
+        >vjumpkung</a
+      >
+    </footer>
     <script>
       const form = document.getElementById("upload_images");
       const imageType = document.getElementById("image_type");

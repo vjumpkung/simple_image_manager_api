@@ -1,25 +1,22 @@
-import uvicorn
-from fastapi.middleware.cors import CORSMiddleware
-
-import uuid
 import os
 import random
 import re
-
-from fastapi import FastAPI, File, UploadFile, Request, Header
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
+import uuid
+import asyncio
 from typing import List
 
-from database.connection import sqliteConnection, cursor
-
+import uvicorn
+from fastapi import FastAPI, File, Header, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 import config.load_config as CONFIG
+from database.connection import db, cursor
 
 app = FastAPI(title=CONFIG.API_NAME, summary=CONFIG.API_DESCRIPTION)
-
 
 templates = Jinja2Templates(directory="templates")
 
@@ -42,6 +39,27 @@ class ImagesResponseDto(BaseModel):
     image_id: str
     img_url: str
     type: str
+
+
+@app.get("/")
+def main(request: Request, accesstoken: str = None):
+
+    if accesstoken == CONFIG.SECRET:
+        return templates.TemplateResponse(
+            "upload_images.html", {"accesstoken": CONFIG.SECRET, "request": request}
+        )
+    else:
+        return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
+
+
+@app.get("/manage_images/")
+def manageImages(request: Request, accesstoken: str = None):
+    if accesstoken == CONFIG.SECRET:
+        return templates.TemplateResponse(
+            "manage_images.html", {"accesstoken": CONFIG.SECRET, "request": request}
+        )
+    else:
+        return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
 
 
 @app.post("/upload_images/{type}/", status_code=201)
@@ -85,7 +103,7 @@ def upload_images(
             """
         )
 
-        sqliteConnection.commit()
+        db.commit()
 
         referer = request.headers.get("referer")
         # extract the base url
@@ -103,27 +121,6 @@ def upload_images(
     return res
 
 
-@app.get("/")
-def main(request: Request, accesstoken: str = None):
-
-    if accesstoken == CONFIG.SECRET:
-        return templates.TemplateResponse(
-            "upload_images.html", {"accesstoken": CONFIG.SECRET, "request": request}
-        )
-    else:
-        return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
-
-
-@app.get("/manage_images/")
-def manageImages(request: Request, accesstoken: str = None):
-    if accesstoken == CONFIG.SECRET:
-        return templates.TemplateResponse(
-            "manage_images.html", {"accesstoken": CONFIG.SECRET, "request": request}
-        )
-    else:
-        return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
-
-
 @app.get("/get_all_images/")
 def getAllImage(request: Request) -> List[ImagesResponseDto]:
 
@@ -132,7 +129,7 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
 
     images = cursor.fetchall()
 
-    sqliteConnection.commit()
+    db.commit()
 
     img_url = []
 
@@ -155,11 +152,11 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
 @app.get("/get_images/{type}")
 def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
     # get all images from database
-    cursor.execute(f"SELECT * FROM images WHERE type = '{type}';")
+    cur = cursor.execute(f"SELECT * FROM images WHERE type = '{type}';")
 
-    images = cursor.fetchall()
+    images = cur.fetchall()
 
-    sqliteConnection.commit()
+    db.commit()
 
     img_url = []
 
@@ -184,11 +181,11 @@ def deleteImage(image_id: str, accesstoken: str = Header(None)) -> None:
     if accesstoken != CONFIG.SECRET:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
 
-    cursor.execute(f"SELECT * FROM images WHERE image_id = '{image_id}';")
-    image = cursor.fetchone()
+    cur = cursor.execute(f"SELECT * FROM images WHERE image_id = '{image_id}';")
+    image = cur.fetchone()
     os.remove(f"public/{image[2]}")
     cursor.execute(f"DELETE FROM images WHERE image_id = '{image_id}';")
-    sqliteConnection.commit()
+    db.commit()
     return None
 
 
@@ -198,6 +195,5 @@ if __name__ == "__main__":
         port=int(CONFIG.PORT),
         reload=CONFIG.RELOAD,
         host=CONFIG.HOST,
-        forwarded_allow_ips="*",
-        proxy_headers=True,
     )
+    # stop the database connection after the server is stopped
