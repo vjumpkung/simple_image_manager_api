@@ -150,6 +150,10 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
 
     img_url = []
 
+    # get request url
+    base_url = request.base_url
+    print(base_url)
+
     # extract the base url
     for image in images:
         img_url.append(
