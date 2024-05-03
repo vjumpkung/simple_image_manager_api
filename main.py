@@ -125,11 +125,13 @@ def upload_images(
         )
 
         db.commit()
+        # get request url
+        base_url = request.base_url
 
         res.append(
             {
                 "image_id": UUID,
-                "img_url": "/public/" + fileNameWithHash,
+                "img_url": base_url + "/public/" + fileNameWithHash,
                 "type": type,
             }
         )
@@ -152,14 +154,13 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
 
     # get request url
     base_url = request.base_url
-    print(base_url)
 
     # extract the base url
     for image in images:
         img_url.append(
             {
                 "image_id": image[0],
-                "img_url": "/public/" + image[2],
+                "img_url": base_url + "/public/" + image[2],
                 "type": image[1],
             }
         )
@@ -167,7 +168,7 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
     return img_url
 
 
-@app.get("/get_images/{type}")
+@app.get("/get_images/{type}/")
 def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
     # get all images from database
     cur = cursor.execute(f"SELECT * FROM images WHERE type = '{type}';")
@@ -178,12 +179,15 @@ def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
 
     img_url = []
 
+    # get request url
+    base_url = request.base_url
+
     # extract the base url
     for image in images:
         img_url.append(
             {
                 "image_id": image[0],
-                "img_url": "/public/" + image[2],
+                "img_url": base_url + "/public/" + image[2],
                 "type": image[1],
             }
         )
