@@ -128,6 +128,9 @@ def upload_images(
         # get request url
         base_url = request.base_url
 
+        if CONFIG.PRODUCTION:
+            base_url.replace("http://", "https://")
+
         res.append(
             {
                 "image_id": UUID,
@@ -154,6 +157,8 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
 
     # get request url
     base_url = request.base_url
+    if CONFIG.PRODUCTION:
+        base_url.replace("http://", "https://")
 
     # extract the base url
     for image in images:
@@ -181,6 +186,8 @@ def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
 
     # get request url
     base_url = request.base_url
+    if CONFIG.PRODUCTION:
+        base_url.replace("http://", "https://")
 
     # extract the base url
     for image in images:
