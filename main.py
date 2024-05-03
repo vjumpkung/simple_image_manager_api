@@ -20,9 +20,7 @@ app = FastAPI(title=CONFIG.API_NAME, summary=CONFIG.API_DESCRIPTION)
 
 templates = Jinja2Templates(directory="templates")
 
-origins = [
-    "*",
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,10 +40,15 @@ class ImagesResponseDto(BaseModel):
 
 
 @app.get("/")
-def main(request: Request, accesstoken: str = None):
+def main_page(request: Request, accesstoken: str = None):
     if accesstoken == CONFIG.SECRET:
         return templates.TemplateResponse(
-            "upload_images.html", {"accesstoken": CONFIG.SECRET, "request": request, "image_types": CONFIG.CHOICES}
+            "upload_images.html",
+            {
+                "accesstoken": CONFIG.SECRET,
+                "request": request,
+                "image_types": CONFIG.CHOICES,
+            },
         )
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
@@ -53,7 +56,7 @@ def main(request: Request, accesstoken: str = None):
 
 @app.get("/manage_images/")
 def manageImages(request: Request, accesstoken: str = None):
-    
+
     cursor.execute("SELECT * FROM images;")
 
     images = cursor.fetchall()
@@ -70,10 +73,11 @@ def manageImages(request: Request, accesstoken: str = None):
                 "type": image[1],
             }
         )
-    
+
     if accesstoken == CONFIG.SECRET:
         return templates.TemplateResponse(
-            "manage_images.html", {"accesstoken": CONFIG.SECRET, "request": request, "images": images_res}
+            "manage_images.html",
+            {"accesstoken": CONFIG.SECRET, "request": request, "images": images_res},
         )
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
@@ -122,14 +126,10 @@ def upload_images(
 
         db.commit()
 
-        referer = request.headers.get("referer")
-        # extract the base url
-        base_url = re.match(r"(http[s]?://[^/]+)", referer).group(0)
-
         res.append(
             {
                 "image_id": UUID,
-                "img_url": base_url + "/public/" + fileNameWithHash,
+                "img_url": "/public/" + fileNameWithHash,
                 "type": type,
             }
         )
@@ -150,15 +150,12 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
 
     img_url = []
 
-    referer = request.headers.get("referer")
     # extract the base url
-    base_url = re.match(r"(http[s]?://[^/]+)", referer).group(0)
-
     for image in images:
         img_url.append(
             {
                 "image_id": image[0],
-                "img_url": base_url + "/public/" + image[2],
+                "img_url": "/public/" + image[2],
                 "type": image[1],
             }
         )
@@ -177,15 +174,12 @@ def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
 
     img_url = []
 
-    referer = request.headers.get("referer")
     # extract the base url
-    base_url = re.match(r"(http[s]?://[^/]+)", referer).group(0)
-
     for image in images:
         img_url.append(
             {
                 "image_id": image[0],
-                "img_url": base_url + "/public/" + image[2],
+                "img_url": "/public/" + image[2],
                 "type": image[1],
             }
         )
