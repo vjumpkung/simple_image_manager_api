@@ -214,4 +214,6 @@ if __name__ == "__main__":
         port=int(CONFIG.PORT),
         reload=CONFIG.RELOAD,
         host=CONFIG.HOST,
+        proxy_headers=True,
+        forwarded_allow_ips="*",
     )
