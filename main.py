@@ -131,7 +131,7 @@ def upload_images(
         res.append(
             {
                 "image_id": UUID,
-                "img_url": base_url + "/public/" + fileNameWithHash,
+                "img_url": str(base_url) + "/public/" + fileNameWithHash,
                 "type": type,
             }
         )
@@ -160,7 +160,7 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
         img_url.append(
             {
                 "image_id": image[0],
-                "img_url": base_url + "/public/" + image[2],
+                "img_url": str(base_url) + "/public/" + image[2],
                 "type": image[1],
             }
         )
@@ -187,7 +187,7 @@ def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
         img_url.append(
             {
                 "image_id": image[0],
-                "img_url": base_url + "/public/" + image[2],
+                "img_url": str(base_url) + "/public/" + image[2],
                 "type": image[1],
             }
         )
