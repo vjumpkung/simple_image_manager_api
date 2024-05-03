@@ -126,10 +126,7 @@ def upload_images(
 
         db.commit()
         # get request url
-        base_url = request.base_url
-
-        if CONFIG.PRODUCTION:
-            base_url.replace("http://", "https://")
+        base_url = request.base_url.__str__()
 
         res.append(
             {
@@ -156,9 +153,7 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
     img_url = []
 
     # get request url
-    base_url = request.base_url
-    if CONFIG.PRODUCTION:
-        base_url.replace("http://", "https://")
+    base_url = request.base_url.__str__()
 
     # extract the base url
     for image in images:
@@ -185,9 +180,7 @@ def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
     img_url = []
 
     # get request url
-    base_url = request.base_url
-    if CONFIG.PRODUCTION:
-        base_url.replace("http://", "https://")
+    base_url = request.base_url.__str__()
 
     # extract the base url
     for image in images:
