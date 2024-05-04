@@ -14,7 +14,8 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 import config.load_config as CONFIG
-from database.connection import db, cursor
+from database.connection import Images, engine
+from sqlmodel import Session, select, insert
 
 app = FastAPI(title=CONFIG.API_NAME, summary=CONFIG.API_DESCRIPTION)
 
@@ -57,20 +58,17 @@ def main_page(request: Request, accesstoken: str = None):
 @app.get("/manage_images/")
 def manageImages(request: Request, accesstoken: str = None):
 
-    cursor.execute("SELECT * FROM images;")
-
-    images = cursor.fetchall()
-
-    db.commit()
+    with Session(engine) as session:
+        images = session.exec(select(Images)).all()
 
     images_res = []
 
     for image in images:
         images_res.append(
             {
-                "image_id": image[0],
-                "img_url": "/public/" + image[2],
-                "type": image[1],
+                "image_id": image.image_id,
+                "img_url": "/public/" + image.file_name,
+                "type": image.type,
             }
         )
 
@@ -116,22 +114,17 @@ def upload_images(
 
         UUID = str(uuid.uuid4())
 
-        # save file details to database
-        cursor.execute(
-            f"""
-            INSERT INTO images (image_id, type, file_name)
-            VALUES ('{UUID}', '{type}', '{fileNameWithHash}');
-            """
-        )
+        with Session(engine) as session:
+            session.add(Images(image_id=UUID, type=type, file_name=fileNameWithHash))
+            session.commit()
 
-        db.commit()
         # get request url
         base_url = request.base_url.__str__()
 
         res.append(
             {
                 "image_id": UUID,
-                "img_url": str(base_url) + "public/" + fileNameWithHash,
+                "img_url": request.url_for("public", path=fileNameWithHash)._url,
                 "type": type,
             }
         )
@@ -144,11 +137,8 @@ def upload_images(
 def getAllImage(request: Request) -> List[ImagesResponseDto]:
 
     # get all images from database
-    cursor.execute("SELECT * FROM images;")
-
-    images = cursor.fetchall()
-
-    db.commit()
+    with Session(engine) as session:
+        images = session.exec(select(Images)).all()
 
     img_url = []
 
@@ -159,9 +149,9 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
     for image in images:
         img_url.append(
             {
-                "image_id": image[0],
-                "img_url": str(base_url) + "public/" + image[2],
-                "type": image[1],
+                "image_id": image.image_id,
+                "img_url": request.url_for("public", path=image.file_name)._url,
+                "type": image.type,
             }
         )
 
@@ -171,11 +161,8 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
 @app.get("/get_images/{type}/")
 def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
     # get all images from database
-    cur = cursor.execute(f"SELECT * FROM images WHERE type = '{type}';")
-
-    images = cur.fetchall()
-
-    db.commit()
+    with Session(engine) as session:
+        images = session.exec(select(Images).where(Images.type == type)).all()
 
     img_url = []
 
@@ -186,9 +173,9 @@ def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
     for image in images:
         img_url.append(
             {
-                "image_id": image[0],
-                "img_url": str(base_url) + "public/" + image[2],
-                "type": image[1],
+                "image_id": image.image_id,
+                "img_url": request.url_for("public", path=image.file_name)._url,
+                "type": image.type,
             }
         )
 
@@ -200,11 +187,15 @@ def deleteImage(image_id: str, accesstoken: str = Header(None)) -> None:
     if accesstoken != CONFIG.SECRET:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
 
-    cur = cursor.execute(f"SELECT * FROM images WHERE image_id = '{image_id}';")
-    image = cur.fetchone()
-    os.remove(f"public/{image[2]}")
-    cursor.execute(f"DELETE FROM images WHERE image_id = '{image_id}';")
-    db.commit()
+    with Session(engine) as session:
+        image = session.exec(select(Images).where(Images.image_id == image_id)).first()
+
+    os.remove(f"public/{image.file_name}")
+
+    with Session(engine) as session:
+        session.delete(image)
+        session.commit()
+
     return None
 
 
