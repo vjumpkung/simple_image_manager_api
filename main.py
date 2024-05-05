@@ -1,12 +1,10 @@
 import os
 import random
-import re
 import uuid
-import json
 from typing import List
 
 import uvicorn
-from fastapi import FastAPI, Header, Request, UploadFile, Response
+from fastapi import FastAPI, Request, UploadFile, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -74,12 +72,16 @@ def login_page(request: Request):
         payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
         return RedirectResponse(url="/upload_images/")
     except:
-        return templates.TemplateResponse("login_page.html", {"request": request})
+        return templates.TemplateResponse(
+            "login_page.html", {"request": request, "app_name": CONFIG.API_NAME}
+        )
 
 
 @app.get("/register_page/")
 def register_page(request: Request):
-    return templates.TemplateResponse("register_page.html", {"request": request})
+    return templates.TemplateResponse(
+        "register_page.html", {"request": request, "app_name": CONFIG.API_NAME}
+    )
 
 
 @app.get("/upload_images/")
@@ -91,12 +93,21 @@ def main_page(request: Request):
     except:
         return RedirectResponse(url="/")
 
+    with Session(engine) as session:
+        api_keys = session.exec(
+            select(ApiKeys).where(ApiKeys.user_id == payload["user_id"])
+        ).first()
+
     return templates.TemplateResponse(
         "upload_images.html",
         {
             "username": payload["username"],
             "request": request,
             "image_types": CONFIG.CHOICES,
+            "app_name": CONFIG.API_NAME,
+            "api_key": (
+                api_keys.api_key_id if api_keys else "No API Key Please Generate One!"
+            ),
         },
     )
 
@@ -128,7 +139,7 @@ def manageImages(request: Request):
 
     return templates.TemplateResponse(
         "manage_images.html",
-        {"request": request, "images": images_res},
+        {"request": request, "images": images_res, "app_name": CONFIG.API_NAME},
     )
 
 
@@ -147,7 +158,7 @@ def login(authResponseDto: AuthRequestDto, response: Response) -> AuthResponseDt
             algorithm="HS256",
         )
 
-        response.set_cookie(key="access_token", value=accessToken, expires=3600)
+        response.set_cookie(key="access_token", value=accessToken, expires=604800)
 
         return AuthResponseDto(accesstoken=accessToken)
     else:
@@ -214,9 +225,6 @@ def upload_images(
             fileName.replace(" ", "_") + "-" + "".join(hash[0:5]) + fileExension
         )
 
-        with open(f"public/{fileNameWithHash}", "wb") as f:
-            f.write(file.file.read())
-
         UUID = str(uuid.uuid4())
 
         with Session(engine) as session:
@@ -230,8 +238,8 @@ def upload_images(
             )
             session.commit()
 
-        # get request url
-        base_url = request.base_url.__str__()
+        with open(f"public/{fileNameWithHash}", "wb") as f:
+            f.write(file.file.read())
 
         res.append(
             {
@@ -274,8 +282,8 @@ def getAllImage(apiKey: str, request: Request) -> List[ImagesResponseDto]:
     return img_url
 
 
-@app.get("/get_api_keys/")
-def getApiKeys(request: Request) -> List[ApiKeys]:
+@app.get("/get_api_key/")
+def getApiKeys(request: Request) -> ApiKeys:
     try:
         jwt_token = request.cookies.get("access_token")
         payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
@@ -285,7 +293,7 @@ def getApiKeys(request: Request) -> List[ApiKeys]:
     with Session(engine) as session:
         api_keys = session.exec(
             select(ApiKeys).where(ApiKeys.user_id == payload["user_id"])
-        ).all()
+        ).first()
 
     return api_keys
 
@@ -297,6 +305,15 @@ def generateApiKey(request: Request) -> APIKeysResponseDto:
         payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
     except JWTError:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
+
+    with Session(engine) as session:
+        apiKey = session.exec(
+            select(ApiKeys).where(ApiKeys.user_id == payload["user_id"])
+        ).first()
+
+    if apiKey:
+        session.delete(apiKey)
+        session.commit()
 
     UUID = "".join(
         [random.choice("abcdefghijklmnopqrstuvwxyz1234567890") for i in range(30)]

@@ -11,7 +11,7 @@
       referrerpolicy="no-referrer"
     />
     <meta name="robots" content="noindex" />
-    <title>Upload Images</title>
+    <title>{{app_name}} - Upload Images</title>
     <style>
       .lds-dual-ring {
         color: #ffffff;
@@ -131,7 +131,7 @@
           Generate
         </button>
         <p style="text-align: center">
-          <code id="api_key">API KEYS WILL BE HERE AFTER GENERATE.</code>
+          <code id="api_key">{{api_key}}</code>
         </p>
       </div>
     </main>
@@ -214,12 +214,36 @@
       });
 
       async function generate_api_key() {
-        const res = await fetch("/generate_api_key/", {
-          method: "POST",
-        });
-        copyText = document.getElementById("api_key").innerText = await res
-          .json()
-          .then((data) => data.api_key);
+        if (
+          document.getElementById("api_key").innerText !=
+          "No API Key Please Generate One!"
+        ) {
+          const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "Your present API key will be overrided and cannot use old key anymore.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, override!",
+            cancelButtonText: "cancel",
+          });
+          if (result.isConfirmed) {
+            await generateApiKey();
+            return;
+          }
+        } else {
+          await generateApiKey();
+          return;
+        }
+        async function generateApiKey() {
+          const res = await fetch("/generate_api_key/", {
+            method: "POST",
+          });
+          copyText = document.getElementById("api_key").innerText = await res
+            .json()
+            .then((data) => data.api_key);
+        }
       }
     </script>
   </body>

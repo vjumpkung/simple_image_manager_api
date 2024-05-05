@@ -4,7 +4,7 @@ A simple image manager which using FastAPI, SQLite
 
 ## Demo
 
-
+https://simple-image-uploader.vjumpkung.dynv6.net/
 
 ## Features
 
@@ -50,4 +50,8 @@ see more features by going swagger docs (/docs)
 ```
 
 6. run `python main.py`
-7. access website with `http://localhost:PORT/?accesstoken=SECRET` (require SECRET for simple securing :P)
+7. access website with `http://localhost:PORT/`
+
+## To-Do List
+
+- [ ] Password Reset 
