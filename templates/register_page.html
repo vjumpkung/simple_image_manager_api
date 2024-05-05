@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/picocss/2.0.6/pico.min.css"
+      integrity="sha512-UXfikgakSZBii5lkvmDCRO+IYWQhTtwMOJ+3EmGEA+oA82kvbSskgw3OI16Jx1kINgF8aqOkYE+c9h4m6muONg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <meta name="robots" content="noindex" />
+    <title>Upload Images</title>
+    <style>
+      .lds-dual-ring {
+        color: #ffffff;
+      }
+      .lds-dual-ring,
+      .lds-dual-ring:after {
+        box-sizing: border-box;
+      }
+      .lds-dual-ring {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+      }
+      .lds-dual-ring:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6.4px solid currentColor;
+        border-color: currentColor transparent currentColor transparent;
+        animation: lds-dual-ring 1.2s linear infinite;
+      }
+      @keyframes lds-dual-ring {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .flexbox {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        box-sizing: border-box;
+        margin: 0px -10px;
+      }
+
+      .item {
+        box-sizing: border-box;
+        width: 25%;
+        margin-bottom: 20px;
+        padding: 0px 10px;
+      }
+
+      .content {
+        text-align: center;
+        box-sizing: border-box;
+      }
+
+      footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: 2.5rem; /* Footer height */
+        margin-bottom: 0.25em;
+      }
+    </style>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.10.8/sweetalert2.all.min.js"
+      integrity="sha512-ziDG00v9lDjgmzxhvyX5iztPHpSryN/Ct/TAMPmMmS2O3T1hFPRdrzVCSvwnbPbFNie7Yg5mF7NUSSp5smu7RA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1 style="text-align: center">Simple Image Uploader</h1>
+      <h3 style="text-align: center">Register</h3>
+      <form id="register_form">
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="username"
+        />
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="password"
+        />
+        <button type="submit">Register</button>
+      </form>
+      <div style="text-align: right">
+        <a href="/">login</a>
+      </div>
+    </main>
+    <footer style="text-align: center">
+      created by
+      <a
+        href="https://github.com/vjumpkung"
+        target="_blank"
+        rel="noopener noreferrer"
+        >vjumpkung</a
+      >
+    </footer>
+    <script>
+      const form = document.getElementById("login_form");
+
+      addEventListener("submit", (e) => {});
+
+      onsubmit = async (e) => {
+        e.preventDefault();
+
+        username = document.getElementById("username").value;
+        password = document.getElementById("password").value;
+
+        const response = await fetch("/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username: username, password: password }),
+        });
+
+        if (response.status === 201) {
+          const result = Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "Register successfully!",
+            confirmButtonText: "OK",
+          }).then((result) => {
+            window.location.href = "/";
+          });
+          return;
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Register failed",
+            text: "Username already exists",
+          });
+        }
+      };
+    </script>
+  </body>
+</html>

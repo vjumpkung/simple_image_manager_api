@@ -9,10 +9,22 @@ with open("database.db", "a") as f:
     pass
 
 
+class ApiKeys(SQLModel, table=True):
+    api_key_id: str = Field(primary_key=True)
+    user_id: str = Field(foreign_key="users.user_id")
+
+
 class Images(SQLModel, table=True):
     image_id: str = Field(primary_key=True)
     type: str
     file_name: str
+    user_id: str = Field(foreign_key="users.user_id")
+
+
+class Users(SQLModel, table=True):
+    user_id: str = Field(primary_key=True)
+    username: str
+    password: str
 
 
 sqlite_url = "sqlite:///database.db"

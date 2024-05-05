@@ -83,6 +83,11 @@
   <body>
     <main class="container">
       <h1 style="text-align: center">Simple Image Uploader</h1>
+      <h3 style="text-align: center">Upload Images</h3>
+      <h4 style="text-align: right">username : {{username}}</h4>
+      <div style="text-align: right">
+        <a href="/logout">logout</a>
+      </div>
       <form id="upload_images">
         <h3>Image :</h3>
         <input name="files" type="file" accept="image/*" multiple />
@@ -117,8 +122,18 @@
         </div>
       </form>
       <p style="text-align: center">
-        <a href="/manage_images/?accesstoken={{accesstoken}}">Manage Images</a>
+        <a href="/manage_images/">Manage Images</a>
       </p>
+      <br />
+      <div>
+        <h3>Generate API key</h3>
+        <button id="generate_api_key" onclick="generate_api_key()">
+          Generate
+        </button>
+        <p style="text-align: center">
+          <code id="api_key">API KEYS WILL BE HERE AFTER GENERATE.</code>
+        </p>
+      </div>
     </main>
     <footer style="text-align: center">
       created by
@@ -197,6 +212,15 @@
         document.getElementById("submit_button").style.display = "block";
         form.reset();
       });
+
+      async function generate_api_key() {
+        const res = await fetch("/generate_api_key/", {
+          method: "POST",
+        });
+        copyText = document.getElementById("api_key").innerText = await res
+          .json()
+          .then((data) => data.api_key);
+      }
     </script>
   </body>
 </html>

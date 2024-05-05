@@ -24,7 +24,6 @@
 
       .item {
         box-sizing: border-box;
-        width: 25%;
         margin-bottom: 20px;
         padding: 0px 10px;
       }
@@ -36,6 +35,7 @@
         font-weight: 600;
         text-align: center;
         box-sizing: border-box;
+        width: 25vh;
         height: 100%;
         padding: 10px;
       }
@@ -71,7 +71,7 @@
     <main class="container">
       <h1 style="text-align: center">Manage Images</h1>
       <p style="text-align: center">
-        <a href="/?accesstoken={{accesstoken}}">Upload Images</a>
+        <a href="/upload_images/">Upload Images</a>
       </p>
       <div id="image_list" class="flexbox">
         {% for image in images %}

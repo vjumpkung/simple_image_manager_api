@@ -6,20 +6,26 @@ import json
 from typing import List
 
 import uvicorn
-from fastapi import FastAPI, File, Header, Request, UploadFile
+from fastapi import FastAPI, Header, Request, UploadFile, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 import config.load_config as CONFIG
-from database.connection import Images, engine
-from sqlmodel import Session, select, insert
+from database.connection import Images, engine, Users, ApiKeys
+from sqlmodel import Session, select
+
+from passlib.context import CryptContext
+from jose import JWTError, jwt
 
 app = FastAPI(title=CONFIG.API_NAME, summary=CONFIG.API_DESCRIPTION)
 
 templates = Jinja2Templates(directory="templates")
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 origins = ["*"]
 
@@ -40,26 +46,74 @@ class ImagesResponseDto(BaseModel):
     type: str
 
 
+class AuthRequestDto(BaseModel):
+    username: str
+    password: str
+
+
+class AuthResponseDto(BaseModel):
+    accesstoken: str
+
+
+class APIKeysResponseDto(BaseModel):
+    api_key: str
+
+
+class StatusResponseDto(BaseModel):
+    status: str
+
+
 @app.get("/")
-def main_page(request: Request, accesstoken: str = None):
-    if accesstoken == CONFIG.SECRET:
-        return templates.TemplateResponse(
-            "upload_images.html",
-            {
-                "accesstoken": CONFIG.SECRET,
-                "request": request,
-                "image_types": CONFIG.CHOICES,
-            },
-        )
-    else:
-        return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
+def login_page(request: Request):
+    try:
+        jwt_token = request.cookies.get("access_token")
+
+        if jwt_token == None:
+            raise JWTError
+
+        payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
+        return RedirectResponse(url="/upload_images/")
+    except:
+        return templates.TemplateResponse("login_page.html", {"request": request})
+
+
+@app.get("/register_page/")
+def register_page(request: Request):
+    return templates.TemplateResponse("register_page.html", {"request": request})
+
+
+@app.get("/upload_images/")
+def main_page(request: Request):
+
+    try:
+        jwt_token = request.cookies.get("access_token")
+        payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
+    except:
+        return RedirectResponse(url="/")
+
+    return templates.TemplateResponse(
+        "upload_images.html",
+        {
+            "username": payload["username"],
+            "request": request,
+            "image_types": CONFIG.CHOICES,
+        },
+    )
 
 
 @app.get("/manage_images/")
-def manageImages(request: Request, accesstoken: str = None):
+def manageImages(request: Request):
+
+    try:
+        jwt_token = request.cookies.get("access_token")
+        payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
+    except:
+        return RedirectResponse(url="/")
 
     with Session(engine) as session:
-        images = session.exec(select(Images)).all()
+        images = session.exec(
+            select(Images).where(Images.user_id == payload["user_id"])
+        ).all()
 
     images_res = []
 
@@ -72,24 +126,75 @@ def manageImages(request: Request, accesstoken: str = None):
             }
         )
 
-    if accesstoken == CONFIG.SECRET:
-        return templates.TemplateResponse(
-            "manage_images.html",
-            {"accesstoken": CONFIG.SECRET, "request": request, "images": images_res},
+    return templates.TemplateResponse(
+        "manage_images.html",
+        {"request": request, "images": images_res},
+    )
+
+
+@app.post("/login", status_code=200)
+def login(authResponseDto: AuthRequestDto, response: Response) -> AuthResponseDto:
+    with Session(engine) as session:
+        user = session.exec(
+            select(Users).where(Users.username == authResponseDto.username)
+        ).first()
+
+    if user and pwd_context.verify(authResponseDto.password, user.password):
+
+        accessToken = jwt.encode(
+            {"user_id": user.user_id, "username": user.username},
+            CONFIG.SECRET,
+            algorithm="HS256",
         )
+
+        response.set_cookie(key="access_token", value=accessToken, expires=3600)
+
+        return AuthResponseDto(accesstoken=accessToken)
     else:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
 
 
+@app.get("/logout", status_code=200)
+def logout(response: Response, request: Request):
+    response = RedirectResponse(url="/")
+    response.delete_cookie(key="access_token")
+    return response
+
+
+@app.post("/register", status_code=201)
+def register(authResponseDto: AuthRequestDto, request: Request) -> StatusResponseDto:
+
+    with Session(engine) as session:
+        user = session.exec(
+            select(Users).where(Users.username == authResponseDto.username)
+        ).first()
+
+    if user:
+        return JSONResponse(content={"message": "User already exists"}, status_code=400)
+
+    hashed_password = pwd_context.hash(authResponseDto.password)
+    UUID = str(uuid.uuid4())
+    with Session(engine) as session:
+        session.add(
+            Users(
+                user_id=UUID,
+                username=authResponseDto.username,
+                password=hashed_password,
+            )
+        )
+        session.commit()
+    return StatusResponseDto(status="User created")
+
+
 @app.post("/upload_images/{type}/", status_code=201)
 def upload_images(
-    files: List[UploadFile],
-    type: str,
-    request: Request,
-    accesstoken: str = Header(None),
+    files: List[UploadFile], type: str, request: Request
 ) -> List[ImagesResponseDto]:
 
-    if accesstoken != CONFIG.SECRET:
+    try:
+        jwt_token = request.cookies.get("access_token")
+        payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
+    except JWTError:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
 
     res = []
@@ -115,7 +220,14 @@ def upload_images(
         UUID = str(uuid.uuid4())
 
         with Session(engine) as session:
-            session.add(Images(image_id=UUID, type=type, file_name=fileNameWithHash))
+            session.add(
+                Images(
+                    image_id=UUID,
+                    type=type,
+                    file_name=fileNameWithHash,
+                    user_id=payload["user_id"],
+                )
+            )
             session.commit()
 
         # get request url
@@ -134,16 +246,20 @@ def upload_images(
 
 
 @app.get("/get_all_images/")
-def getAllImage(request: Request) -> List[ImagesResponseDto]:
+def getAllImage(apiKey: str, request: Request) -> List[ImagesResponseDto]:
+
+    with Session(engine) as session:
+        access = session.exec(
+            select(ApiKeys).where(ApiKeys.api_key_id == apiKey)
+        ).first()
 
     # get all images from database
     with Session(engine) as session:
-        images = session.exec(select(Images)).all()
+        images = session.exec(
+            select(Images).where(Images.user_id == access.user_id)
+        ).all()
 
     img_url = []
-
-    # get request url
-    base_url = request.base_url.__str__()
 
     # extract the base url
     for image in images:
@@ -158,16 +274,58 @@ def getAllImage(request: Request) -> List[ImagesResponseDto]:
     return img_url
 
 
+@app.get("/get_api_keys/")
+def getApiKeys(request: Request) -> List[ApiKeys]:
+    try:
+        jwt_token = request.cookies.get("access_token")
+        payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
+    except JWTError:
+        return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
+
+    with Session(engine) as session:
+        api_keys = session.exec(
+            select(ApiKeys).where(ApiKeys.user_id == payload["user_id"])
+        ).all()
+
+    return api_keys
+
+
+@app.post("/generate_api_key/", status_code=201)
+def generateApiKey(request: Request) -> APIKeysResponseDto:
+    try:
+        jwt_token = request.cookies.get("access_token")
+        payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
+    except JWTError:
+        return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
+
+    UUID = "".join(
+        [random.choice("abcdefghijklmnopqrstuvwxyz1234567890") for i in range(30)]
+    )
+
+    with Session(engine) as session:
+        session.add(ApiKeys(api_key_id=UUID, user_id=payload["user_id"]))
+        session.commit()
+
+    return APIKeysResponseDto(api_key=UUID)
+
+
 @app.get("/get_images/{type}/")
-def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
+def getImageByType(type: str, request: Request, apiKey: str) -> List[ImagesResponseDto]:
+
+    with Session(engine) as session:
+        access = session.exec(
+            select(ApiKeys).where(ApiKeys.api_key_id == apiKey)
+        ).first()
+
     # get all images from database
     with Session(engine) as session:
-        images = session.exec(select(Images).where(Images.type == type)).all()
+        images = session.exec(
+            select(Images).where(
+                Images.type == type and Images.user_id == access.user_id
+            )
+        ).all()
 
     img_url = []
-
-    # get request url
-    base_url = request.base_url.__str__()
 
     # extract the base url
     for image in images:
@@ -183,12 +341,19 @@ def getImageByType(type: str, request: Request) -> List[ImagesResponseDto]:
 
 
 @app.delete("/delete_image/{image_id}/", status_code=204)
-def deleteImage(image_id: str, accesstoken: str = Header(None)) -> None:
-    if accesstoken != CONFIG.SECRET:
+def deleteImage(image_id: str, request: Request) -> None:
+    try:
+        jwt_token = request.cookies.get("access_token")
+        payload = jwt.decode(jwt_token, CONFIG.SECRET, algorithms=["HS256"])
+    except JWTError:
         return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
 
     with Session(engine) as session:
-        image = session.exec(select(Images).where(Images.image_id == image_id)).first()
+        image = session.exec(
+            select(Images).where(
+                Images.image_id == image_id and Images.user_id == payload["user_id"]
+            )
+        ).first()
 
     os.remove(f"public/{image.file_name}")
 
