@@ -27,7 +27,7 @@ class Users(SQLModel, table=True):
     password: str
 
 
-sqlite_url = "sqlite:///database.db"
+sqlite_url = CONFIG.DATABASE_URI
 engine = create_engine(sqlite_url, echo=not CONFIG.PRODUCTION)
 
 SQLModel.metadata.create_all(engine)

@@ -2,15 +2,25 @@
 
 A simple image manager which using FastAPI, SQLite
 
+## Demo
+
+
+
 ## Features
 
+### Login and Register Page
+
+![](/images/login.png)
+![](/images/register.png)
+
+### Support multiple images and can select type for find by type later (for grouping images).
 ![](/images/upload_img.png)
 
-Support multiple images and can select type for find by type later (for grouping images).
+
+### For manage images (delete only)
 
 ![](/images/manage_img.png)
 
-For manage images (delete only)
 
 see more features by going swagger docs (/docs)
 
