@@ -2,6 +2,10 @@
 
 A simple image manager which using FastAPI, SQLite
 
+# Limitation
+
+- Not suitable for production use because sqlite is not supported async.
+
 ## Demo
 
 https://simple-image-uploader.vjumpkung.dynv6.net/
