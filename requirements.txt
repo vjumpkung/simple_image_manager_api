@@ -7,3 +7,4 @@ jinja2
 sqlmodel
 python-jose[cryptography]
 passlib[bcrypt]
+aiosqlite

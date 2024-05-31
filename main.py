@@ -144,13 +144,17 @@ def manageImages(request: Request):
 
 
 @app.post("/login", status_code=200)
-def login(authResponseDto: AuthRequestDto, response: Response) -> AuthResponseDto:
+def login(authRequestDto: AuthRequestDto, response: Response) -> AuthResponseDto:
+    
+    if authRequestDto.username == "" or authRequestDto.password == "":
+        return JSONResponse(content={"message": "username and password cannot be blank"}, status_code=401)
+    
     with Session(engine) as session:
         user = session.exec(
-            select(Users).where(Users.username == authResponseDto.username)
+            select(Users).where(Users.username == authRequestDto.username)
         ).first()
 
-    if user and pwd_context.verify(authResponseDto.password, user.password):
+    if user and pwd_context.verify(authRequestDto.password, user.password):
 
         accessToken = jwt.encode(
             {"user_id": user.user_id, "username": user.username},
@@ -162,7 +166,7 @@ def login(authResponseDto: AuthRequestDto, response: Response) -> AuthResponseDt
 
         return AuthResponseDto(accesstoken=accessToken)
     else:
-        return JSONResponse(content={"message": "Unauthorized"}, status_code=401)
+        return JSONResponse(content={"message": "check username or password"}, status_code=401)
 
 
 @app.get("/logout", status_code=200)
@@ -174,6 +178,9 @@ def logout(response: Response, request: Request):
 
 @app.post("/register", status_code=201)
 def register(authResponseDto: AuthRequestDto, request: Request) -> StatusResponseDto:
+
+    if (authResponseDto.username == "" or authResponseDto.password == ""):
+        return JSONResponse(content={"message": "username or password cannot be blank"}, status_code=400)
 
     with Session(engine) as session:
         user = session.exec(
