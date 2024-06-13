@@ -12,6 +12,11 @@ https://simple-image-uploader.vjumpkung.dynv6.net/
 
 ## Features
 
+### Multiple Relational Database Support
+
+- sqlite
+- posgresql
+
 ### Login and Register Page
 
 ![](/images/login.png)
