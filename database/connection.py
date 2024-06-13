@@ -1,7 +1,12 @@
 # create sqlite database
-import sqlite3
-from sqlmodel import Field, SQLModel, create_engine
+from tortoise.models import Model
+from tortoise import fields
+from tortoise.contrib.fastapi import RegisterTortoise
+from tortoise.contrib.pydantic import pydantic_model_creator
 import config.load_config as CONFIG
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from typing import AsyncGenerator
 
 # create database.db file if not exists
 
@@ -9,25 +14,35 @@ with open("database.db", "a") as f:
     pass
 
 
-class ApiKeys(SQLModel, table=True):
-    api_key_id: str = Field(primary_key=True)
-    user_id: str = Field(foreign_key="users.user_id")
+class Users(Model):
+    user_id = fields.UUIDField(primary_key=True)
+    username = fields.TextField()
+    password = fields.TextField()
 
 
-class Images(SQLModel, table=True):
-    image_id: str = Field(primary_key=True)
-    type: str
-    file_name: str
-    user_id: str = Field(foreign_key="users.user_id")
+class Images(Model):
+    image_id = fields.UUIDField(primary_key=True)
+    type = fields.TextField()
+    file_name = fields.TextField()
+    user_id = fields.ForeignKeyField("models.Users", related_name="user_id_1")
 
 
-class Users(SQLModel, table=True):
-    user_id: str = Field(primary_key=True)
-    username: str
-    password: str
+class ApiKeys(Model):
+    api_key_id = fields.TextField(primary_key=True)
+    user_id = fields.ForeignKeyField("models.Users", related_name="user_id_2")
 
 
-sqlite_url = CONFIG.DATABASE_URI
-engine = create_engine(sqlite_url, echo=not CONFIG.PRODUCTION)
-
-SQLModel.metadata.create_all(engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # app startup
+    async with RegisterTortoise(
+        app,
+        db_url=CONFIG.DATABASE_URI,
+        modules={"models": ["main"]},
+        generate_schemas=True,
+        add_exception_handlers=True,
+    ):
+        # db connected
+        yield
+        # app teardown
+    # db connections closed

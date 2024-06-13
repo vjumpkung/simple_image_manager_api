@@ -4,7 +4,8 @@ python-dotenv==1.0.1
 uvicorn==0.29.0
 python-multipart
 jinja2
-sqlmodel
+tortoise-orm
+tortoise-orm[asyncpg]
 python-jose[cryptography]
 passlib[bcrypt]
 aiosqlite

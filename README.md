@@ -4,7 +4,7 @@ A simple image manager which using FastAPI, SQLite
 
 # Limitation
 
-- Not suitable for production use because sqlite is not supported async.
+-  ~~Not suitable for production use because sqlite is not supported async.~~ (fixed by change ORM)
 
 ## Demo
 
@@ -58,4 +58,4 @@ see more features by going swagger docs (/docs)
 
 ## To-Do List
 
-- [ ] Password Reset 
+- [ ] Password Reset (require email so no more)
