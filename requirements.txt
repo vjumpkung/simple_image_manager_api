@@ -9,3 +9,4 @@ tortoise-orm[asyncpg]
 python-jose[cryptography]
 passlib[bcrypt]
 aiosqlite
+aiofiles

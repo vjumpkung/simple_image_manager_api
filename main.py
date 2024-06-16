@@ -1,8 +1,10 @@
+import aiofiles
 import os
 import random
 import uuid
 from typing import List
 
+import aiofiles.os
 import uvicorn
 from fastapi import FastAPI, Request, UploadFile, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -226,8 +228,8 @@ async def upload_images(
 
         image = await Images.create(type=type, file_name=fileNameWithHash, user_id=user)
 
-        with open(f"public/{fileNameWithHash}", "wb") as f:
-            f.write(file.file.read())
+        async with aiofiles.open(f"public/{fileNameWithHash}", "wb") as f:
+            await f.write(file.file.read())
 
         res.append(
             {
@@ -345,7 +347,7 @@ async def deleteImage(img_id: str, request: Request) -> None:
 
     image = await Images.filter(image_id=uuid.UUID(img_id)).first()
 
-    os.remove(f"public/{image.file_name}")
+    await aiofiles.os.remove(f"public/{image.file_name}")
 
     await image.delete()
 
