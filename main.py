@@ -16,7 +16,6 @@ from pydantic import BaseModel
 
 import config.load_config as CONFIG
 from database.connection import Images, Users, ApiKeys, lifespan
-from sqlmodel import Session, select
 
 from passlib.context import CryptContext
 from jose import JWTError, jwt
